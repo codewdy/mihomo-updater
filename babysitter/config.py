@@ -18,6 +18,10 @@ class Config(BaseModel):
     secret: str = ""
     config_update_interval: int = 0
     github_proxy: list[str] = ["https://gh-proxy.com/", "https://ghproxy.vip/"]
+    ui_url: str = (
+        "https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip"
+    )
+    ui_subdir: str = "ui"
 
 
 def _env_tag_constructor(loader: yaml.SafeLoader, node: yaml.Node) -> str:

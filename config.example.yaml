@@ -8,3 +8,4 @@ config_update_interval: 3600
 github_proxy:
   - https://gh-proxy.org/
   - https://ghproxy.vip/
+ui_url: https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip

@@ -14,6 +14,7 @@ from download_config import (
     reload_mihomo_config,
 )
 from download_mihomo import download_mihomo
+from download_ui import download_metacubex_ui
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -49,13 +50,19 @@ def main() -> None:
     cfg = load_config(cfg_file)
     logger.info("数据目录: %s", Path(cfg.path).resolve())
 
-    logger.info("步骤 1/2：下载或更新 mihomo 二进制")
+    logger.info("步骤 1/3：下载或更新 mihomo 二进制")
     try:
         download_mihomo(cfg.path, github_proxy=cfg.github_proxy)
     except Exception:
         logger.exception("下载 mihomo 失败")
 
-    logger.info("步骤 2/2：下载并写入 Clash 配置")
+    logger.info("步骤 2/3：下载 Web UI（metacubexd）")
+    try:
+        download_metacubex_ui(cfg)
+    except Exception:
+        logger.exception("下载 Web UI 失败")
+
+    logger.info("步骤 3/3：下载并写入 Clash 配置")
     try:
         download_clash_config(cfg)
     except Exception:
