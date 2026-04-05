@@ -1,0 +1,11 @@
+services:
+  mihomo-updater:
+    image: ${MIHOMO_UPDATER_IMAGE}
+    user: "${HOST_UID}:${HOST_GID}"
+    env_file: .env
+    ports:
+      - "${HOST_PORT:-7890}:7890"
+      - "${HOST_API_PORT:-9090}:9090"
+    volumes:
+      - ${DATA_PATH:-data}:/app/data
+    restart: unless-stopped
