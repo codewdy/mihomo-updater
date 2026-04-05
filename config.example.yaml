@@ -4,3 +4,5 @@ port: 7890
 allow_lan: false
 api_port: 9090
 secret: ""
+# 配置更新间隔，单位：秒
+config_update_interval: 3600

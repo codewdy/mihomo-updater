@@ -6,8 +6,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from config import load_config
-from download_config import download_clash_config
+from config import Config, load_config
+from download_config import (
+    MihomoAPIError,
+    download_clash_config,
+    read_mihomo_api_auth_token,
+    reload_mihomo_config,
+)
 from download_mihomo import download_mihomo
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -18,6 +23,21 @@ logging.basicConfig(
     stream=sys.stderr,
 )
 logger = logging.getLogger(__name__)
+
+
+def _auto_refresh_config(cfg: Config) -> None:
+    api_token = read_mihomo_api_auth_token(cfg)
+    try:
+        download_clash_config(cfg)
+    except Exception:
+        logger.exception("自动更新：下载配置文件失败")
+        return
+    try:
+        reload_mihomo_config(cfg, auth_token=api_token)
+    except MihomoAPIError:
+        pass
+    except Exception:
+        logger.exception("自动更新：通过 API 重载配置失败")
 
 
 def main() -> None:
@@ -41,8 +61,18 @@ def main() -> None:
         [str(mihomo_bin), "-d", str(data_dir)],
         stdin=subprocess.DEVNULL,
     )
-    # 阻塞在 waitpid 上直至子进程结束，期间不占 CPU；退出时立刻返回，无需轮询 + sleep
-    rc = proc.wait()
+    interval = cfg.config_update_interval
+    while True:
+        try:
+            if interval > 0:
+                rc = proc.wait(timeout=float(interval))
+            else:
+                rc = proc.wait()
+                break
+        except subprocess.TimeoutExpired:
+            _auto_refresh_config(cfg)
+            continue
+        break
     if rc != 0:
         logger.error("mihomo 异常退出，退出码: %s", rc)
     raise SystemExit(rc if rc is not None else 1)

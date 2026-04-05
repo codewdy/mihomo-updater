@@ -16,6 +16,7 @@ class Config(BaseModel):
     allow_lan: bool = False
     api_port: int = 9090
     secret: str = ""
+    config_update_interval: int = 0
 
 
 def _env_tag_constructor(loader: yaml.SafeLoader, node: yaml.Node) -> str:
