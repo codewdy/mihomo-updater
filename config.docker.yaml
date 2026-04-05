@@ -5,3 +5,6 @@ allow_lan: true
 api_port: 9090
 secret: ${SECRET:-}
 config_update_interval: ${CONFIG_UPDATE_INTERVAL:-3600}
+github_proxy:
+  - https://gh-proxy.org/
+  - https://ghproxy.vip/

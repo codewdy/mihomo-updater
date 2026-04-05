@@ -51,7 +51,7 @@ def main() -> None:
 
     logger.info("步骤 1/2：下载或更新 mihomo 二进制")
     try:
-        download_mihomo(cfg.path)
+        download_mihomo(cfg.path, github_proxy=cfg.github_proxy)
     except Exception:
         logger.exception("下载 mihomo 失败")
 

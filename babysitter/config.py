@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Config(BaseModel):
@@ -17,6 +17,7 @@ class Config(BaseModel):
     api_port: int = 9090
     secret: str = ""
     config_update_interval: int = 0
+    github_proxy: list[str] = ["https://gh-proxy.com/", "https://ghproxy.vip/"]
 
 
 def _env_tag_constructor(loader: yaml.SafeLoader, node: yaml.Node) -> str:

@@ -126,6 +126,7 @@ def download_mihomo(
     *,
     tag: str | None = None,
     filename: str = "mihomo",
+    github_proxy: list[str] | None = None,
 ) -> Path:
     """
     从 GitHub Release 下载与当前 Linux 架构匹配的 mihomo 可执行文件（.gz 单文件包）。
@@ -133,6 +134,8 @@ def download_mihomo(
     :param dest_dir: 输出目录
     :param tag: 如 ``v1.19.22``；为 None 时使用 latest release
     :param filename: 解压后的文件名（默认 ``mihomo``）
+    :param github_proxy: 与配置项 ``github_proxy`` 相同；``None`` 使用 ``download_github`` 默认前缀；
+        空列表表示禁用代理回退
     :return: 可执行文件路径（已存在则直接返回，不重新下载）
     """
     dest_dir = Path(dest_dir)
@@ -181,12 +184,13 @@ def download_mihomo(
         )
 
     logger.info("开始下载 mihomo: %s (%s)", tag, chosen)
-    req = Request(download_url, method="GET")
-    req.add_header("User-Agent", DEFAULT_UA)
-    with urlopen(req) as resp:
-        compressed = read_http_body_with_progress(
-            resp, label=f"mihomo ({chosen})"
-        )
+    from download_github import download_github_url
+
+    compressed = download_github_url(
+        download_url,
+        label=f"mihomo ({chosen})",
+        proxy_prefixes=github_proxy,
+    )
 
     binary = gzip.decompress(compressed)
     out_path.write_bytes(binary)
