@@ -1,0 +1,6 @@
+url: https://example.com/clash.yaml
+path: data
+port: 7890
+allow_lan: false
+api_port: 9090
+secret: ""
