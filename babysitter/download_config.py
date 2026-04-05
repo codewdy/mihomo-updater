@@ -7,7 +7,7 @@ from urllib.request import Request, urlopen
 
 import yaml
 
-from config import Config
+from config import Config, load_config
 from mixin import apply_mixin
 
 
@@ -34,9 +34,8 @@ def download_clash_config(config: Config) -> None:
 
 if __name__ == "__main__":
     import sys
-    from config import Config
 
-    config = yaml.safe_load(open(sys.argv[-1]).read())
-    config = Config(**config)
+    config = load_config(sys.argv[-1])
+    print(config)
 
     download_clash_config(config)
