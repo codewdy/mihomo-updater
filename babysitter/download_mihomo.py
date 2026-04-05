@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import logging
 import platform
 import sys
 from pathlib import Path
@@ -15,6 +16,57 @@ GITHUB_LATEST = (
 DEFAULT_UA = (
     "mihomo-updater/1.0 (Linux; +https://github.com/MetaCubeX/mihomo)"
 )
+
+logger = logging.getLogger(__name__)
+
+
+def _fmt_bytes(n: int) -> str:
+    if n < 1024:
+        return f"{n} B"
+    if n < 1024 * 1024:
+        return f"{n / 1024:.1f} KiB"
+    return f"{n / (1024 * 1024):.2f} MiB"
+
+
+def read_http_body_with_progress(
+    resp,
+    *,
+    label: str,
+    log: logging.Logger | None = None,
+) -> bytes:
+    """分块读取 HTTP 响应体；若存在 Content-Length 则每约 10% 打一条进度日志。"""
+    lg = log or logger
+    chunk_size = 256 * 1024
+    cl = resp.headers.get("Content-Length")
+    total: int | None = int(cl) if cl and cl.isdigit() else None
+    chunks: list[bytes] = []
+    received = 0
+    last_logged_pct = -1
+
+    while True:
+        chunk = resp.read(chunk_size)
+        if not chunk:
+            break
+        chunks.append(chunk)
+        received += len(chunk)
+        if total is not None:
+            pct = min(100, (100 * received) // total)
+            if pct >= last_logged_pct + 10 or received >= total:
+                lg.info(
+                    "%s 下载进度 %d%%（%s / %s）",
+                    label,
+                    pct,
+                    _fmt_bytes(received),
+                    _fmt_bytes(total),
+                )
+                last_logged_pct = pct // 10 * 10
+
+    body = b"".join(chunks)
+    if total is None:
+        lg.info("%s 下载完成，共 %s（未提供总长度）", label, _fmt_bytes(len(body)))
+    else:
+        lg.info("%s 下载完成，共 %s", label, _fmt_bytes(len(body)))
+    return body
 
 
 def mihomo_linux_arch_suffixes() -> list[str]:
@@ -81,12 +133,16 @@ def download_mihomo(
     :param dest_dir: 输出目录
     :param tag: 如 ``v1.19.22``；为 None 时使用 latest release
     :param filename: 解压后的文件名（默认 ``mihomo``）
-    :return: 写入的可执行文件路径
+    :return: 可执行文件路径（已存在则直接返回，不重新下载）
     """
-    suffixes = mihomo_linux_arch_suffixes()
     dest_dir = Path(dest_dir)
     dest_dir.mkdir(parents=True, exist_ok=True)
     out_path = dest_dir / filename
+    if out_path.is_file():
+        logger.info("mihomo 已存在，跳过下载: %s", out_path)
+        return out_path
+
+    suffixes = mihomo_linux_arch_suffixes()
 
     if tag is None:
         release = _http_json(GITHUB_LATEST)
@@ -124,14 +180,18 @@ def download_mihomo(
             f"当前 release {tag} 中未找到与本机架构匹配的包（已尝试: {tried}）"
         )
 
+    logger.info("开始下载 mihomo: %s (%s)", tag, chosen)
     req = Request(download_url, method="GET")
     req.add_header("User-Agent", DEFAULT_UA)
     with urlopen(req) as resp:
-        compressed = resp.read()
+        compressed = read_http_body_with_progress(
+            resp, label=f"mihomo ({chosen})"
+        )
 
     binary = gzip.decompress(compressed)
     out_path.write_bytes(binary)
     out_path.chmod(0o755)
+    logger.info("mihomo 已解压写入: %s（解压后 %s）", out_path, _fmt_bytes(len(binary)))
     return out_path
 
 

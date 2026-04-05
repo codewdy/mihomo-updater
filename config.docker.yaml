@@ -1,0 +1,7 @@
+url: ${SUB_URL}
+path: data
+port: 7890
+allow_lan: true
+api_port: 9090
+secret: ${SECRET:-}
+config_update_interval: ${CONFIG_UPDATE_INTERVAL:-3600}

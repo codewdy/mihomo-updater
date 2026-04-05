@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 def _auto_refresh_config(cfg: Config) -> None:
+    logger.info("定时刷新：开始拉取配置并重载")
     api_token = read_mihomo_api_auth_token(cfg)
     try:
         download_clash_config(cfg)
@@ -34,6 +35,7 @@ def _auto_refresh_config(cfg: Config) -> None:
         return
     try:
         reload_mihomo_config(cfg, auth_token=api_token)
+        logger.info("定时刷新：配置已重载")
     except MihomoAPIError:
         pass
     except Exception:
@@ -43,13 +45,17 @@ def _auto_refresh_config(cfg: Config) -> None:
 def main() -> None:
     os.chdir(_REPO_ROOT)
     cfg_file = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("config.yaml")
+    logger.info("加载配置: %s", cfg_file.resolve())
     cfg = load_config(cfg_file)
+    logger.info("数据目录: %s", Path(cfg.path).resolve())
 
+    logger.info("步骤 1/2：下载或更新 mihomo 二进制")
     try:
         download_mihomo(cfg.path)
     except Exception:
         logger.exception("下载 mihomo 失败")
 
+    logger.info("步骤 2/2：下载并写入 Clash 配置")
     try:
         download_clash_config(cfg)
     except Exception:
@@ -57,11 +63,20 @@ def main() -> None:
 
     data_dir = Path(cfg.path).resolve()
     mihomo_bin = data_dir / "mihomo"
+    logger.info("启动 mihomo: %s -d %s", mihomo_bin, data_dir)
     proc = subprocess.Popen(
         [str(mihomo_bin), "-d", str(data_dir)],
         stdin=subprocess.DEVNULL,
     )
     interval = cfg.config_update_interval
+    if interval > 0:
+        logger.info(
+            "mihomo 已启动（pid=%s），将每 %s 秒检查并刷新配置",
+            proc.pid,
+            interval,
+        )
+    else:
+        logger.info("mihomo 已启动（pid=%s），未启用定时刷新", proc.pid)
     while True:
         try:
             if interval > 0:

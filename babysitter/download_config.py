@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 import yaml
 
 from config import Config, load_config
+from download_mihomo import read_http_body_with_progress
 from mixin import apply_mixin
 
 logger = logging.getLogger(__name__)
@@ -64,13 +65,16 @@ def _extract_api_error_message(body: str) -> str:
 
 
 def download_clash_config(config: Config) -> None:
+    logger.info("开始下载 Clash 配置: %s", config.url)
     req = Request(config.url, method="GET")
     req.add_header(
         "User-Agent",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     )
     with urlopen(req) as resp:
-        raw = resp.read()
+        raw = read_http_body_with_progress(
+            resp, label="Clash 配置", log=logger
+        )
     text = raw.decode("utf-8")
     data: Any = yaml.safe_load(text)
 
@@ -82,6 +86,7 @@ def download_clash_config(config: Config) -> None:
         yaml.safe_dump(
             data, f, allow_unicode=True, default_flow_style=False, sort_keys=False
         )
+    logger.info("Clash 配置已写入: %s", out)
 
 
 def reload_mihomo_config(
