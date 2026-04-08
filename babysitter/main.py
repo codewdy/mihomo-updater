@@ -13,6 +13,7 @@ from download_config import (
     read_mihomo_api_auth_token,
     reload_mihomo_config,
 )
+from download_geoip import download_geoip_metadb
 from download_mihomo import download_mihomo
 from download_ui import download_metacubex_ui
 
@@ -50,19 +51,25 @@ def main() -> None:
     cfg = load_config(cfg_file)
     logger.info("数据目录: %s", Path(cfg.path).resolve())
 
-    logger.info("步骤 1/3：下载或更新 mihomo 二进制")
+    logger.info("步骤 1/4：下载或更新 mihomo 二进制")
     try:
         download_mihomo(cfg.path, github_proxy=cfg.github_proxy)
     except Exception:
         logger.exception("下载 mihomo 失败")
 
-    logger.info("步骤 2/3：下载 Web UI（metacubexd）")
+    logger.info("步骤 2/4：初始化 geoip 数据库")
+    try:
+        download_geoip_metadb(cfg.path, github_proxy=cfg.github_proxy)
+    except Exception:
+        logger.exception("下载 geoip 数据库失败")
+
+    logger.info("步骤 3/4：下载 Web UI（metacubexd）")
     try:
         download_metacubex_ui(cfg)
     except Exception:
         logger.exception("下载 Web UI 失败")
 
-    logger.info("步骤 3/3：下载并写入 Clash 配置")
+    logger.info("步骤 4/4：下载并写入 Clash 配置")
     try:
         download_clash_config(cfg)
     except Exception:
