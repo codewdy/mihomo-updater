@@ -1,6 +1,6 @@
 # mihomo-updater
 
-用于自动更新 mihomo 订阅配置。
+用于自动拉起 mihomo 服务并更新订阅配置。
 
 ## 使用 Docker Compose 启动
 
