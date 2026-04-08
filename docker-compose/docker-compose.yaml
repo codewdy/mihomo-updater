@@ -1,6 +1,6 @@
 services:
   mihomo-updater:
-    image: ${MIHOMO_UPDATER_IMAGE}
+    image: ${MIHOMO_UPDATER_IMAGE:-ghcr.io/codewdy/mihomo-updater:latest}
     user: "${HOST_UID}:${HOST_GID}"
     env_file: .env
     ports:
